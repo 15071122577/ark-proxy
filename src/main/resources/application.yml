@@ -1,0 +1,108 @@
+# ============================================================
+# 方舟 Code Plan 中转站系统 - 主配置文件
+# 注意：YAML 不允许重复键，所有 spring.* 配置合并到一个 spring 节点下
+# 敏感配置请通过环境变量注入，不要在此文件中硬编码
+# ============================================================
+
+spring:
+  # ---------- 应用基本配置 ----------
+  application:
+    name: ark-proxy                    # 应用名称，用于日志和监控标识
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}  # 激活的配置环境，默认 dev
+
+  # ---------- 数据源配置（MySQL） ----------
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:ark_proxy}?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8mb4
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:                            # HikariCP 连接池配置
+      minimum-idle: 5                  # 最小空闲连接数
+      maximum-pool-size: 20            # 最大连接数
+      idle-timeout: 600000             # 空闲连接超时时间（10分钟）
+      max-lifetime: 1800000            # 连接最大存活时间（30分钟）
+      connection-timeout: 30000        # 获取连接超时时间（30秒）
+      pool-name: ArkProxyHikariCP      # 连接池名称，便于监控识别
+
+  # ---------- JPA/Hibernate 配置 ----------
+  jpa:
+    hibernate:
+      ddl-auto: validate               # 生产环境用 validate，开发环境用 update
+    show-sql: false                     # 是否在日志中打印 SQL
+    open-in-view: false                 # 禁用 OSIV，避免 WebFlux 中的 Session 泄漏
+    properties:
+      hibernate:
+        format_sql: true                # 格式化 SQL（配合 show-sql 使用）
+        dialect: org.hibernate.dialect.MySQLDialect  # MySQL 方言
+
+  # ---------- Redis 配置 ----------
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}      # 无密码则留空
+      timeout: 5000ms                   # 连接超时时间
+      lettuce:                          # Lettuce 响应式客户端连接池
+        pool:
+          max-active: 20                # 最大活跃连接数
+          max-idle: 10                  # 最大空闲连接数
+          min-idle: 5                   # 最小空闲连接数
+          max-wait: 3000ms              # 获取连接最大等待时间
+
+  # ---------- Jackson JSON 配置 ----------
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss   # 日期格式
+    time-zone: Asia/Shanghai            # 时区
+    serialization:
+      write-dates-as-timestamps: false  # 日期不转为时间戳，保持可读格式
+    default-property-inclusion: non_null # 序列化时忽略 null 字段
+
+# ---------- 服务器配置（WebFlux/Netty） ----------
+server:
+  port: 8080                            # 服务监听端口
+  netty:
+    connection-timeout: 30000           # Netty 连接超时（30秒）
+
+# ---------- InfluxDB 时序数据库配置 ----------
+influx:
+  url: ${INFLUXDB_URL:http://localhost:8086}   # InfluxDB 服务地址
+  token: ${INFLUXDB_TOKEN:influxdb-token}       # API Token
+  org: ${INFLUXDB_ORG:ark-proxy-org}            # 组织名称
+  bucket: ${INFLUXDB_BUCKET:ark_proxy_realtime} # 存储桶名称
+
+# ---------- JWT 认证配置 ----------
+jwt:
+  secret: ${JWT_SECRET:my-secret-key-change-in-production-environment-must-be-256-bits}  # 签名密钥，生产环境必须更换
+  expiration: ${JWT_EXPIRATION:86400}   # Token 有效期（秒），默认 24 小时
+
+# ---------- 加密配置（AES-256-GCM，用于 AK/SK 加密存储） ----------
+encryption:
+  aes-key: ${ENCRYPTION_AES_KEY:default-aes-key-change-in-prod}  # AES 密钥，生产环境必须更换为 32 字节密钥
+
+# ---------- 代理转发配置 ----------
+proxy:
+  connect-timeout: 10000                # 建立连接超时（10秒）
+  read-timeout: 120000                  # 读取响应超时（120秒，AI 流式响应需要较长超时）
+  write-timeout: 10000                  # 写入请求超时（10秒）
+  max-in-memory-size: 16MB              # 最大内存缓冲区，用于大 JSON 请求体
+
+# ---------- 日志配置 ----------
+logging:
+  level:
+    com.ark.proxy: INFO                 # 业务代码日志级别
+    org.springframework: WARN           # Spring 框架日志级别
+    org.hibernate: WARN                 # Hibernate 日志级别
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+
+# ---------- Spring Actuator 监控配置 ----------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus  # 暴露的监控端点
+  endpoint:
+    health:
+      show-details: when-authorized     # 仅认证用户可查看健康详情

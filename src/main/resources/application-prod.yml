@@ -1,0 +1,45 @@
+# ============================================================
+# 生产环境配置
+# 所有敏感配置通过环境变量注入，严禁硬编码
+# ============================================================
+
+spring:
+  # ---------- 数据源配置（生产 MySQL，启用 SSL） ----------
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:ark_proxy}?useSSL=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=false&characterEncoding=utf8mb4
+    username: ${MYSQL_USERNAME}          # 必须通过环境变量注入
+    password: ${MYSQL_PASSWORD}          # 必须通过环境变量注入
+    hikari:
+      minimum-idle: 10                  # 生产环境增大最小空闲连接
+      maximum-pool-size: 50             # 生产环境增大最大连接数
+  jpa:
+    hibernate:
+      ddl-auto: validate                # 生产环境只做表结构校验，不自动变更
+    show-sql: false                      # 生产环境不打印 SQL
+  data:
+    redis:
+      host: ${REDIS_HOST}               # 必须通过环境变量注入
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}        # 必须通过环境变量注入
+
+# ---------- InfluxDB 生产配置 ----------
+influx:
+  url: ${INFLUXDB_URL}
+  token: ${INFLUXDB_TOKEN}
+  org: ${INFLUXDB_ORG}
+  bucket: ${INFLUXDB_BUCKET}
+
+# ---------- JWT 生产配置 ----------
+jwt:
+  secret: ${JWT_SECRET}                 # 必须通过环境变量注入，至少 256 位
+  expiration: ${JWT_EXPIRATION:86400}
+
+# ---------- 加密生产配置 ----------
+encryption:
+  aes-key: ${ENCRYPTION_AES_KEY}         # 必须通过环境变量注入，32 字节
+
+# ---------- 日志配置（生产环境 INFO 级别） ----------
+logging:
+  level:
+    com.ark.proxy: INFO
+    org.springframework: WARN

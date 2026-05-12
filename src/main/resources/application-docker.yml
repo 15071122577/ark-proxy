@@ -1,0 +1,32 @@
+# ============================================================
+# Docker 容器环境配置
+# 使用 Docker 内部网络主机名，容器间通过服务名通信
+# ============================================================
+
+spring:
+  # ---------- 数据源配置（Docker 内部 MySQL） ----------
+  datasource:
+    url: jdbc:mysql://mysql:3306/ark_proxy?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8mb4
+    username: ${MYSQL_USERNAME:ark_proxy}
+    password: ${MYSQL_PASSWORD:ark_proxy_password}
+  data:
+    redis:
+      host: redis                       # Docker Compose 服务名
+      port: 6379
+      password: ${REDIS_PASSWORD:redis_password}
+
+# ---------- InfluxDB Docker 配置 ----------
+influx:
+  url: ${INFLUXDB_URL:http://influxdb:8086}   # Docker Compose 服务名
+  token: ${INFLUXDB_TOKEN:ark_proxy_token}
+  org: ${INFLUXDB_ORG:ark-proxy-org}
+  bucket: ${INFLUXDB_BUCKET:ark_proxy_realtime}
+
+# ---------- JWT Docker 配置 ----------
+jwt:
+  secret: ${JWT_SECRET:docker-secret-key-change-in-production}  # 部署时必须更换
+  expiration: ${JWT_EXPIRATION:86400}
+
+# ---------- 加密 Docker 配置 ----------
+encryption:
+  aes-key: ${ENCRYPTION_AES_KEY:docker-aes-key-32-bytes-long!}  # 部署时必须更换

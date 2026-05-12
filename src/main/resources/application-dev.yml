@@ -1,0 +1,43 @@
+# ============================================================
+# 开发环境配置
+# 本地开发使用，DDL 自动更新，开启 SQL 日志，DEBUG 级别
+# ============================================================
+
+spring:
+  # ---------- 数据源配置（本地 MySQL） ----------
+  datasource:
+    url: jdbc:mysql://localhost:3306/ark_proxy?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8mb4
+    username: root
+    password: rootpassword
+  jpa:
+    hibernate:
+      ddl-auto: update                  # 开发环境自动建表/更新表结构
+    show-sql: true                      # 开发环境打印 SQL 语句
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis_password
+
+# ---------- InfluxDB 本地配置 ----------
+influx:
+  url: http://localhost:8086
+  token: dev-influxdb-token
+  org: ark-proxy-org
+  bucket: ark_proxy_realtime
+
+# ---------- JWT 开发配置（仅供本地开发，不可用于生产） ----------
+jwt:
+  secret: dev-secret-key-for-local-development-only-not-for-production
+  expiration: 86400                     # 24 小时
+
+# ---------- 加密开发配置（仅供本地开发） ----------
+encryption:
+  aes-key: dev-aes-key-32-bytes-long-enough!!!
+
+# ---------- 日志配置（开发环境 DEBUG 级别） ----------
+logging:
+  level:
+    com.ark.proxy: DEBUG                # 业务代码 DEBUG 级别
+    org.hibernate.SQL: DEBUG            # 打印 SQL 语句
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # 打印 SQL 参数绑定
